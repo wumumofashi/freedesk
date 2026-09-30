@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (如 1.4.9)'
+        description: '版本号 (如 1.5.0)'
         required: true
-        default: '1.4.9'
+        default: '1.5.0'
 
 jobs:
   build:
@@ -15,8 +15,6 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
-          repository: rustdesk/rustdesk
-          ref: refs/tags/${{ github.event.inputs.version }}
           submodules: recursive
 
       - name: Setup Rust
@@ -28,29 +26,49 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install dependencies
+      - name: Install vcpkg
         run: |
-          vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
+          git clone --depth=1 --branch 2023.04.15 https://github.com/microsoft/vcpkg.git D:\vcpkg
+          D:\vcpkg\vcpkg integrate install
+          echo "VCPKG_ROOT=D:\vcpkg" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: D:\vcpkg\vcpkg install --triplet x64-windows-static libvpx libyuv opus aom --x-install-root=D:\vcpkg\installed
 
       - name: Download Sciter
         run: |
           New-Item -ItemType Directory -Force -Path "target/debug"
           Invoke-WebRequest -Uri "https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll" -OutFile "target/debug/sciter.dll"
 
-      - name: Build
+      - name: Build Release
         run: cargo build --release
         env:
+          VCPKG_ROOT: D:\vcpkg
           RUSTFLAGS: "-C target-feature=+crt-static"
 
       - name: Package
         run: |
-          $outdir = "output/${{ github.event.inputs.version }}"
-          New-Item -ItemType Directory -Force -Path $outdir
-          Copy-Item "target/release/rustdesk.exe" "$outdir/"
+          $version = "${{ github.event.inputs.version }}"
+          $outdir = "output\FreeDesk-$version"
+          New-Item -ItemType Directory -Force -Path $outdir | Out-Null
+          
+          Copy-Item "target/release/rustdesk.exe" "$outdir\FreeDesk.exe"
           Copy-Item "target/debug/sciter.dll" "$outdir/"
+          
+          # 创建配置文件
+          $configContent = @"
+[options]
+rendezvous_servers=156.229.162.45:21116
+relay_servers=156.229.162.45:21117
+"@
+          Set-Content -Path "$outdir\rustdesk.conf" -Value $configContent -Encoding UTF8
+          
+          Write-Host "打包完成:"
+          Get-ChildItem $outdir | Select-Object Name, Length
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: FreeDesk-${{ github.event.inputs.version }}
           path: output/
+          retention-days: 30
