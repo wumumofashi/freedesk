@@ -1,109 +1,28 @@
 {
+  "name": "rustdesk",
+  "version": "1.5.0",
   "dependencies": [
     {
-      "name": "aom",
-      "host": true
-    },
-    {
-      "name": "aom",
-      "host": false
-    },
-    {
-      "name": "cpu-features",
-      "platform": "android"
-    },
-    {
-      "name": "libjpeg-turbo",
-      "host": true
-    },
-    {
-      "name": "libjpeg-turbo",
-      "host": false
-    },
-    {
-      "name": "libsodium",
-      "host": false,
-      "platform": "windows & arm64"
-    },
-    {
-      "name": "opus",
-      "host": true
-    },
-    {
-      "name": "opus",
-      "host": false
-    },
-    {
       "name": "libvpx",
-      "host": true
-    },
-    {
-      "name": "libvpx",
-      "host": false
+      "version>=": "1.14.0"
     },
     {
       "name": "libyuv",
-      "host": true
+      "version>=": "20230418"
     },
     {
-      "name": "libyuv",
-      "host": false
+      "name": "opus",
+      "version>=": "1.5.1"
     },
     {
-      "name": "mfx-dispatch",
-      "host": true,
-      "platform": "((x86 | x64) & (android | linux)) | (windows & !uwp)"
-    },
-    {
-      "name": "mfx-dispatch",
-      "host": false,
-      "platform": "((x86 | x64) & (android | linux)) | (windows & !uwp)"
-    },
-    {
-      "name": "ffmpeg",
-      "host": true,
-      "features": [
-        {
-          "name": "amf",
-          "platform": "(((windows & !arm) | linux) & static)"
-        },
-        {
-          "name": "nvcodec",
-          "platform": "(((windows & !arm) | linux) & static)"
-        },
-        {
-          "name": "qsv",
-          "platform": "(windows & !arm & static)"
-        }
-      ],
-      "platform": "((windows | (linux & !arm32) | osx) & static)"
-    },
-    {
-      "name": "ffmpeg",
-      "host": false,
-      "platform": "((android | ios | (linux & arm32)) & static)"
+      "name": "aom",
+      "version>=": "3.9.1"
     }
   ],
-  "vcpkg-configuration": {
-    "default-registry": {
-      "kind": "builtin",
-      "baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d"
-    },
-    "overlay-ports": [
-      "./res/vcpkg"
-    ],
-    "overlay-triplets": [
-      "./res/vcpkg-triplets"
-    ]
-  },
   "overrides": [
-    {
-      "name": "ffnvcodec",
-      "version": "12.1.14.0"
-    },
-    {
-      "name": "amd-amf",
-      "version": "1.4.35"
-    }
+    { "name": "libvpx", "version": "1.14.0" },
+    { "name": "libyuv", "version": "20230418#1" },
+    { "name": "opus", "version": "1.5.1" },
+    { "name": "aom", "version": "3.9.1" }
   ]
 }
