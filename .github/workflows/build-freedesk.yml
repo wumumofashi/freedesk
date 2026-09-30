@@ -23,13 +23,18 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup vcpkg
-        uses: jwlawson/actions-setup-vcpkg@v2
-        with:
-          vcpkg-git-ref: 2023.04.15
+      - name: Install vcpkg
+        shell: cmd
+        run: |
+          git clone --depth=1 https://github.com/microsoft/vcpkg.git D:\vcpkg
+          cd D:\vcpkg
+          bootstrap-vcpkg.bat
+          vcpkg integrate install
+          echo "VCPKG_ROOT=D:\vcpkg" >> %GITHUB_ENV%
 
       - name: Install dependencies
-        run: vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
+        shell: cmd
+        run: D:\vcpkg\vcpkg.exe install libvpx libyuv opus aom --triplet x64-windows-static
 
       - name: Download Sciter
         run: |
@@ -39,7 +44,7 @@ jobs:
       - name: Build
         run: cargo build --release
         env:
-          VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
+          VCPKG_ROOT: D:\vcpkg
           RUSTFLAGS: "-C target-feature=+crt-static"
 
       - name: Package
