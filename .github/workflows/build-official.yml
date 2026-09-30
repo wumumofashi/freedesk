@@ -1,4 +1,4 @@
-﻿name: Build Official RustDesk
+name: Build Official RustDesk
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
       - name: Install vcpkg
         run: |
           git clone --depth=1 --branch 2023.04.15 https://github.com/microsoft/vcpkg.git D:\vcpkg
-          D:\vcpkg\vcpkg integrate install
+          D:\vcpkg\vcpkg.exe integrate install
           echo "VCPKG_ROOT=D:\vcpkg" >> $env:GITHUB_ENV
 
       - name: Build
