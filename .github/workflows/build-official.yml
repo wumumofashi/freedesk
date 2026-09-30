@@ -1,0 +1,36 @@
+﻿name: Build Official RustDesk
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rust-src
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install vcpkg
+        run: |
+          git clone --depth=1 --branch 2023.04.15 https://github.com/microsoft/vcpkg.git D:\vcpkg
+          D:\vcpkg\vcpkg integrate install
+          echo "VCPKG_ROOT=D:\vcpkg" >> $env:GITHUB_ENV
+
+      - name: Build
+        run: cargo build --release
+        env:
+          VCPKG_ROOT: D:\vcpkg
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-official
+          path: target/release/rustdesk.exe
