@@ -57,6 +57,14 @@ jobs:
           Copy-Item "target/release/rustdesk.exe" "$outdir\$brand.exe"
           Copy-Item "target/debug/sciter.dll" "$outdir/"
           
+          # 创建配置文件 - 默认连接自建服务器
+          $configContent = @"
+[options]
+rendezvous_servers=156.229.162.45:21116
+relay_servers=156.229.162.45:21117
+"@
+          Set-Content -Path "$outdir\rustdesk.conf" -Value $configContent -Encoding UTF8
+          
           # 创建安装包配置
           $innoScript = @"
 #define MyAppName "$brand"
@@ -77,6 +85,7 @@ SolidCompression=yes
 [Files]
 Source: "$brand.exe"; DestDir: "{app}"
 Source: "sciter.dll"; DestDir: "{app}"
+Source: "rustdesk.conf"; DestDir: "{app}"
 
 [Icons]
 Name: "{group}\$MyAppName"; Filename: "{app}\$brand.exe"
