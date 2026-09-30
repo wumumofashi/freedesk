@@ -24,30 +24,26 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install vcpkg
-        shell: bash
         run: |
-          git clone --depth=1 https://github.com/microsoft/vcpkg.git /d/vcpkg
-          /d/vcpkg/vcpkg integrate install
+          $env:VCPKG_ROOT = "D:\vcpkg"
+          git clone --depth=1 https://github.com/microsoft/vcpkg.git $env:VCPKG_ROOT
+          & $env:VCPKG_ROOT\vcpkg integrate install
 
       - name: Install dependencies
-        shell: bash
-        run: /d/vcpkg/vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
+        run: D:\vcpkg\vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
 
       - name: Download Sciter
-        shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path "target/debug"
           Invoke-WebRequest -Uri "https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll" -OutFile "target/debug/sciter.dll"
 
       - name: Build
-        shell: bash
         run: cargo build --release
         env:
-          VCPKG_ROOT: /d/vcpkg
+          VCPKG_ROOT: D:\vcpkg
           RUSTFLAGS: "-C target-feature=+crt-static"
 
       - name: Package
-        shell: powershell
         run: |
           $version = "${{ github.event.inputs.version }}"
           $outdir = "output\FreeDesk-$version"
