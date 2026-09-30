@@ -1,0 +1,56 @@
+name: Build FreeDesk Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (如 1.4.9)'
+        required: true
+        default: '1.4.9'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          repository: rustdesk/rustdesk
+          ref: refs/tags/${{ github.event.inputs.version }}
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rust-src
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install dependencies
+        run: |
+          vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
+
+      - name: Download Sciter
+        run: |
+          New-Item -ItemType Directory -Force -Path "target/debug"
+          Invoke-WebRequest -Uri "https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll" -OutFile "target/debug/sciter.dll"
+
+      - name: Build
+        run: cargo build --release
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static"
+
+      - name: Package
+        run: |
+          $outdir = "output/${{ github.event.inputs.version }}"
+          New-Item -ItemType Directory -Force -Path $outdir
+          Copy-Item "target/release/rustdesk.exe" "$outdir/"
+          Copy-Item "target/debug/sciter.dll" "$outdir/"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeDesk-${{ github.event.inputs.version }}
+          path: output/

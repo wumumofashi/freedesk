@@ -1,0 +1,106 @@
+name: Build FreeDesk Windows Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (如 1.5.0)'
+        required: true
+        default: '1.5.0'
+      brand_name:
+        description: '品牌名称'
+        required: true
+        default: 'FreeDesk'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rust-src
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install vcpkg dependencies
+        run: |
+          git clone --depth=1 --branch 2023.04.15 https://github.com/microsoft/vcpkg.git D:\vcpkg
+          D:\vcpkg\vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static --triplet x64-windows-static
+          echo "VCPKG_ROOT=D:\vcpkg" >> $GITHUB_ENV
+
+      - name: Download Sciter
+        run: |
+          New-Item -ItemType Directory -Force -Path "target/debug"
+          Invoke-WebRequest -Uri "https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll" -OutFile "target/debug/sciter.dll"
+
+      - name: Build Release
+        run: cargo build --release
+        env:
+          VCPKG_ROOT: D:\vcpkg
+
+      - name: Prepare Installer
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          $brand = "${{ github.event.inputs.brand_name }}"
+          $outdir = "output\$brand-$version"
+          New-Item -ItemType Directory -Force -Path $outdir | Out-Null
+          
+          # 复制主程序
+          Copy-Item "target/release/rustdesk.exe" "$outdir\$brand.exe"
+          Copy-Item "target/debug/sciter.dll" "$outdir/"
+          
+          # 创建安装包配置
+          $innoScript = @"
+#define MyAppName "$brand"
+#define MyAppVersion "$version"
+#define MyAppPublisher "$brand Team"
+#define MyAppExeName "$brand.exe"
+
+[Setup]
+AppName=$MyAppName
+AppVersion=$MyAppVersion
+DefaultDirName={pf}\$MyAppName
+DefaultGroupName=$MyAppName
+OutputDir=output
+OutputBaseFilename=$MyAppName-$version-Setup
+Compression=lzma2/max
+SolidCompression=yes
+
+[Files]
+Source: "$brand.exe"; DestDir: "{app}"
+Source: "sciter.dll"; DestDir: "{app}"
+
+[Icons]
+Name: "{group}\$MyAppName"; Filename: "{app}\$brand.exe"
+Name: "{commondesktop}\$MyAppName"; Filename: "{app}\$brand.exe"
+"@
+          Set-Content -Path "installer.iss" -Value $innoScript -Encoding UTF8
+          
+          Write-Host "文件准备完成:"
+          Get-ChildItem $outdir | Select-Object Name, Length
+
+      - name: Build Installer (Inno Setup)
+        run: |
+          # 下载 Inno Setup
+          Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "$env:TEMP\is.exe"
+          Start-Process -FilePath "$env:TEMP\is.exe" -ArgumentList "/VERYSILENT /NORESTART" -Wait
+          
+          # 编译安装包
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+          
+          Write-Host "安装包编译完成"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.brand_name }}-${{ github.event.inputs.version }}
+          path: output/
+          retention-days: 30
