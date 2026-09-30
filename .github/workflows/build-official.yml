@@ -19,10 +19,13 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install vcpkg
+        shell: cmd
         run: |
           git clone --depth=1 --branch 2023.04.15 https://github.com/microsoft/vcpkg.git D:\vcpkg
-          D:\vcpkg\vcpkg.exe integrate install
-          echo "VCPKG_ROOT=D:\vcpkg" >> $env:GITHUB_ENV
+          D:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          D:\vcpkg\vcpkg integrate install
+          set "VCPKG_ROOT=D:\vcpkg"
+          echo VCPKG_ROOT=D:\vcpkg >> %GITHUB_ENV%
 
       - name: Build
         run: cargo build --release
