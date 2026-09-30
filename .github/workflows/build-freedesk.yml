@@ -1,10 +1,10 @@
-name: Build FreeDesk Windows
+name: Build FreeDesk
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (如 1.5.0)'
+        description: '版本号'
         required: true
         default: '1.5.0'
 
@@ -12,25 +12,21 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rust-src
 
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install vcpkg
         run: |
           git clone --depth=1 https://github.com/microsoft/vcpkg.git D:\vcpkg
           D:\vcpkg\vcpkg integrate install
-          Write-Host "VCPKG_ROOT=D:\vcpkg" >> $env:GITHUB_ENV
 
       - name: Install dependencies
         run: D:\vcpkg\vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
@@ -40,7 +36,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "target/debug"
           Invoke-WebRequest -Uri "https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll" -OutFile "target/debug/sciter.dll"
 
-      - name: Build Release
+      - name: Build
         run: cargo build --release
         env:
           VCPKG_ROOT: D:\vcpkg
@@ -51,24 +47,15 @@ jobs:
           $version = "${{ github.event.inputs.version }}"
           $outdir = "output\FreeDesk-$version"
           New-Item -ItemType Directory -Force -Path $outdir | Out-Null
-          
           Copy-Item "target/release/rustdesk.exe" "$outdir\FreeDesk.exe"
           Copy-Item "target/debug/sciter.dll" "$outdir/"
-          
-          # 创建配置文件
-          $configContent = @"
-[options]
-rendezvous_servers=156.229.162.45:21116
-relay_servers=156.229.162.45:21117
-"@
-          Set-Content -Path "$outdir\rustdesk.conf" -Value $configContent -Encoding UTF8
-          
-          Write-Host "打包完成:"
-          Get-ChildItem $outdir | Select-Object Name, Length
+          $cfg = "[options]`nrendezvous_servers=156.229.162.45:21116`nrelay_servers=156.229.162.45:21117`n"
+          Set-Content -Path "$outdir\rustdesk.conf" -Value $cfg
+          Get-ChildItem $outdir
 
-      - name: Upload artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: FreeDesk-${{ github.event.inputs.version }}
+          name: FreeDesk-$version
           path: output/
           retention-days: 30
