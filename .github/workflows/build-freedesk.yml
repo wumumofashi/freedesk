@@ -29,15 +29,6 @@ jobs:
           git clone --depth=1 https://github.com/microsoft/vcpkg.git D:\vcpkg
           cd D:\vcpkg
           bootstrap-vcpkg.bat
-          vcpkg integrate install
-          set "VCPKG_ROOT=D:\vcpkg"
-          echo VCPKG_ROOT=D:\vcpkg >> %GITHUB_ENV%
-
-      - name: Install dependencies
-        shell: cmd
-        run: |
-          set VCPKG_ROOT=D:\vcpkg
-          D:\vcpkg\vcpkg.exe install libvpx libyuv opus aom --triplet x64-windows-static --x-install-root=D:\vcpkg\installed
 
       - name: Download Sciter
         run: |
