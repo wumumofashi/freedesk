@@ -23,33 +23,26 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install vcpkg
-        shell: powershell
-        run: |
-          $vcpkgRoot = "D:\vcpkg"
-          git clone --depth=1 https://github.com/microsoft/vcpkg.git $vcpkgRoot
-          & "$vcpkgRoot\vcpkg.exe" integrate install
-          Write-Host "VCPKG_ROOT=$vcpkgRoot" >> $env:GITHUB_ENV
+      - name: Setup vcpkg
+        uses: jwlawson/actions-setup-vcpkg@v2
+        with:
+          vcpkg-git-ref: 2023.04.15
 
       - name: Install dependencies
-        shell: powershell
-        run: D:\vcpkg\vcpkg.exe install libvpx libyuv opus aom --triplet x64-windows-static
+        run: vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
 
       - name: Download Sciter
-        shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path "target/debug"
           Invoke-WebRequest -Uri "https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x64/sciter.dll" -OutFile "target/debug/sciter.dll"
 
       - name: Build
-        shell: powershell
         run: cargo build --release
         env:
-          VCPKG_ROOT: D:\vcpkg
+          VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
           RUSTFLAGS: "-C target-feature=+crt-static"
 
       - name: Package
-        shell: powershell
         run: |
           $version = "${{ github.event.inputs.version }}"
           $outdir = "output\FreeDesk-$version"
