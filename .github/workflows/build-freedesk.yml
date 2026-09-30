@@ -30,11 +30,14 @@ jobs:
           cd D:\vcpkg
           bootstrap-vcpkg.bat
           vcpkg integrate install
-          echo "VCPKG_ROOT=D:\vcpkg" >> %GITHUB_ENV%
+          set "VCPKG_ROOT=D:\vcpkg"
+          echo VCPKG_ROOT=D:\vcpkg >> %GITHUB_ENV%
 
       - name: Install dependencies
         shell: cmd
-        run: D:\vcpkg\vcpkg.exe install libvpx libyuv opus aom --triplet x64-windows-static
+        run: |
+          set VCPKG_ROOT=D:\vcpkg
+          D:\vcpkg\vcpkg.exe install libvpx libyuv opus aom --triplet x64-windows-static --x-install-root=D:\vcpkg\installed
 
       - name: Download Sciter
         run: |
