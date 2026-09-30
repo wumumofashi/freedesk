@@ -12,9 +12,16 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Init submodules
+        run: |
+          git submodule update --init --recursive
+          git submodule foreach git pull origin master
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -22,13 +29,6 @@ jobs:
           components: rust-src
 
       - uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install vcpkg
-        shell: cmd
-        run: |
-          git clone --depth=1 https://github.com/microsoft/vcpkg.git D:\vcpkg
-          cd D:\vcpkg
-          bootstrap-vcpkg.bat
 
       - name: Download Sciter
         run: |
@@ -38,7 +38,6 @@ jobs:
       - name: Build
         run: cargo build --release
         env:
-          VCPKG_ROOT: D:\vcpkg
           RUSTFLAGS: "-C target-feature=+crt-static"
 
       - name: Package
