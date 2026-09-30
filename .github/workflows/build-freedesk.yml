@@ -28,12 +28,12 @@ jobs:
 
       - name: Install vcpkg
         run: |
-          git clone --depth=1 --branch 2023.04.15 https://github.com/microsoft/vcpkg.git D:\vcpkg
+          git clone --depth=1 https://github.com/microsoft/vcpkg.git D:\vcpkg
           D:\vcpkg\vcpkg integrate install
-          echo "VCPKG_ROOT=D:\vcpkg" >> $GITHUB_ENV
+          Write-Host "VCPKG_ROOT=D:\vcpkg" >> $env:GITHUB_ENV
 
       - name: Install dependencies
-        run: D:\vcpkg\vcpkg install --triplet x64-windows-static libvpx libyuv opus aom --x-install-root=D:\vcpkg\installed
+        run: D:\vcpkg\vcpkg install libvpx libyuv opus aom --triplet x64-windows-static
 
       - name: Download Sciter
         run: |
